@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Listado de Personas</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f5f5f5;
+      padding: 30px;
+      color: #333;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 40px;
+      font-size: 28px;
+    }
+
+    .stats {
+      display: flex;
+      justify-content: center;
+      gap: 60px;
+      margin-bottom: 30px;
+    }
+
+    .stat-box {
+      font-size: 18px;
+      font-weight: 500;
+    }
+
+    .refresh-btn {
+      display: block;
+      margin: 0 auto 30px auto;
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .refresh-btn:hover {
+      background-color: #0056b3;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: white;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.05);
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: center;
+      border-bottom: 1px solid #ddd;
+    }
+
+    th {
+      background-color: #f0f0f0;
+      font-weight: 600;
+    }
+
+    .form-section {
+      background-color: white;
+      padding: 25px;
+      margin: 50px auto 0 auto;
+      max-width: 400px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.08);
+      border-radius: 8px;
+    }
+
+    .form-section h3 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+
+    .submit-btn {
+      width: 100%;
+      padding: 10px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      font-size: 16px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .submit-btn:hover {
+      background-color: #218838;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Listado de Personas</h1>
+
+  <div class="stats">
+    <div class="stat-box">Total de hombres: <span id="totalHombres">...</span></div>
+    <div class="stat-box">Total de mujeres: <span id="totalMujeres">...</span></div>
+  </div>
+
+  <button class="refresh-btn" onclick="cargarDatos()">Actualizar datos</button>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Edad</th>
+        <th>Sexo</th>
+      </tr>
+    </thead>
+    <tbody id="tablaPersonas">
+      <!-- Filas se insertan aquí -->
+    </tbody>
+  </table>
+
+  <div class="form-section">
+    <h3>Registrar nueva persona</h3>
+    <form id="formPersona">
+      <label for="nombre">Nombre</label>
+      <input type="text" id="nombre" required />
+
+      <label for="edad">Edad</label>
+      <input type="number" id="edad" min="1" required />
+
+      <label for="sexo">Sexo</label>
+      <select id="sexo" required>
+        <option value="">Seleccione una opción</option>
+        <option value="H">Hombre</option>
+        <option value="M">Mujer</option>
+      </select>
+
+      <button type="submit" class="submit-btn">Registrar</button>
+    </form>
+  </div>
+
+  <script>
+    async function cargarDatos() {
+      try {
+        const [resPersonas, resH, resM] = await Promise.all([
+          fetch('http://localhost:8080/personas/OJITO'),
+          fetch('http://localhost:8080/personas/totalH'),
+          fetch('http://localhost:8080/personas/totalM')
+        ]);
+
+        const personas = await resPersonas.json();
+        const totalH = await resH.json();
+        const totalM = await resM.json();
+
+        const tabla = document.getElementById('tablaPersonas');
+        tabla.innerHTML = '';
+
+        personas.forEach(p => {
+          tabla.innerHTML += `
+            <tr>
+              <td>${p.Nombre}</td>
+              <td>${p.Edad}</td>
+              <td>${p.Sexo}</td>
+            </tr>
+          `;
+        });
+
+        document.getElementById('totalHombres').textContent = totalH;
+        document.getElementById('totalMujeres').textContent = totalM;
+
+      } catch (error) {
+        console.error('Error cargando datos:', error);
+      }
+    }
+
+    document.getElementById('formPersona').addEventListener('submit', async function (e) {
+      e.preventDefault();
+
+      const nombre = document.getElementById('nombre').value.trim();
+      const edad = parseInt(document.getElementById('edad').value);
+      const sexo = document.getElementById('sexo').value;
+
+      const nuevaPersona = { Nombre: nombre, Edad: edad, Sexo: sexo };
+
+      try {
+        const res = await fetch('http://localhost:8080/personas/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(nuevaPersona)
+        });
+
+        if (res.ok) {
+          alert('Persona registrada correctamente.');
+          document.getElementById('formPersona').reset();
+          cargarDatos();
+        } else {
+          alert('Error al registrar la persona.');
+        }
+
+      } catch (error) {
+        console.error('Error al enviar los datos:', error);
+      }
+    });
+
+    window.onload = cargarDatos;
+  </script>
+
+</body>
+</html>
