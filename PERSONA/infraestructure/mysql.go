@@ -85,7 +85,6 @@ func (r *MongoPersonRepository) countBySexo(sexo string) (int, error) {
 	return int(count), nil
 }
 
-// Helper para puntero a int64
 func int64Ptr(i int64) *int64 {
 	return &i
 }
